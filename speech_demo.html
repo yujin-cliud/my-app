@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="音声認識アプリ">
+
+  <title>音声認識＋キャラクター</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">  
+<style>
+body {
+  background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);
+  color: #333;
+  font-family: 'Fredoka One', cursive;
+  text-align: center;
+}
+
+  </style>
+</head>
+<body>
+  <h1>これで、あなたも英語が話せる</h1>
+
+  <!-- キャラクター画像 -->
+  <img id="character" src="https://cdn.pixabay.com/photo/2017/01/31/15/00/cat-2022344_1280.png" alt="キャラクター">
+
+  <p id="result">ここに認識結果が表示されるよ</p>
+
+  <button onclick="startRecognition()">音声認識開始</button>
+
+  <hr>
+
+  <label>見本で聞きたい単語や文章を入力：</label><br>
+  <input type="text" id="sampleText" value="apple">
+  <button onclick="playSample()">見本を再生</button>
+
+  <script>
+  const resultElement = document.getElementById('result');
+  const character = document.getElementById('character');
+
+  function startRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.start();
+
+    recognition.onstart = () => character.classList.add('talking');
+    recognition.onend = () => character.classList.remove('talking');
+
+    recognition.onresult = (event) => {
+      const recognizedText = event.results[0][0].transcript.trim().toLowerCase();
+      const sampleText = document.getElementById('sampleText').value.trim().toLowerCase();
+
+      // スコア計算
+      const score = calculateSimilarity(sampleText, recognizedText);
+      resultElement.textContent = `認識結果: ${recognizedText}　スコア: ${score}点`;
+
+      speakText(recognizedText);
+    };
+
+    recognition.onerror = (event) => {
+      resultElement.textContent = 'エラー: ' + event.error;
+    };
+  }
+
+  // 簡単な類似度計算（レーベンシュタイン距離ベースの擬似的な点数化）
+  function calculateSimilarity(str1, str2) {
+    const len = Math.max(str1.length, str2.length);
+    let sameCount = 0;
+    for (let i = 0; i < Math.min(str1.length, str2.length); i++) {
+      if (str1[i] === str2[i]) sameCount++;
+    }
+    return Math.round((sameCount / len) * 100);
+  }
+
+  function speakText(text) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'en-US';
+    utterance.onstart = () => character.classList.add('talking');
+    utterance.onend = () => character.classList.remove('talking');
+    window.speechSynthesis.speak(utterance);
+  }
+
+  function playSample() {
+    const text = document.getElementById('sampleText').value;
+    speakText(text);
+  }
+</script>
+
+</body>
+</html>
